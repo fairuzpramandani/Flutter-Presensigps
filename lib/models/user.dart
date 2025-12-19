@@ -7,8 +7,8 @@ class UserModel {
   final String? namaDept;
 
   UserModel({
-    required this.email,
-    required this.namaLengkap,
+    this.email,
+    this.namaLengkap,
     this.jabatan,
     this.noHp,
     this.foto,
@@ -17,12 +17,12 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      email: json['email'],
-      namaLengkap: json['nama_lengkap'],
-      jabatan: json['jabatan'],
-      noHp: json['no_hp'],
-      foto: json['foto'],
-      namaDept: json['nama_dept'], 
+      email: json['email']?.toString(),
+      namaLengkap: json['nama_lengkap']?.toString(),
+      jabatan: json['jabatan']?.toString(),
+      noHp: json['no_hp']?.toString(),
+      foto: json['foto']?.toString(),
+      namaDept: json['nama_dept']?.toString(), 
     );
   }
 }
