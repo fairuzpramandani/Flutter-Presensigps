@@ -1,4 +1,8 @@
 class AppAssets {
+<<<<<<< HEAD
+  static const String logo = 'assets/images/cms-hadir.png'; 
+}
+=======
   // Base path for images
   static const String _images = 'assets/images';
 
@@ -10,3 +14,4 @@ class AppAssets {
   static const String izin = '$_images/izin.png';
   static const String histori = '$_images/histori.png';
 }
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
