@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+import 'dart:convert'; // Import untuk jsonDecode
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:presensigps/utils/app_colors.dart';
+=======
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:presensigps/models/user.dart';
@@ -6,6 +12,7 @@ import 'package:presensigps/services/api_service.dart';
 import 'package:presensigps/widgets/bottom_nav.dart';
 import 'package:presensigps/utils/session_manager.dart';
 import 'package:presensigps/utils/app_assets.dart';
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -15,15 +22,38 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+<<<<<<< HEAD
+  String _userName = "User";
+  String _userJabatan = "Karyawan"; // Hapus 'final' agar bisa diupdate
+=======
   static const String waktuMasukMax = "23:45:00";
   static const String waktuPulangMin = "17:00:00";
   
   UserModel? _currentUser;
   bool _isLoading = true;
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
 
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
+    _loadUserData();
+  }
+
+  // Load data user dari SharedPreferences (Data dari Login API)
+  void _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Ambil data user yang disimpan di ApiService.login()
+    final userString = prefs.getString('user');
+    
+    if (userString != null) {
+      // Decode JSON string ke Map
+      final user = jsonDecode(userString);
+      setState(() {
+        _userName = user['nama_lengkap'] ?? "User";
+        _userJabatan = user['jabatan'] ?? "Karyawan"; 
+=======
     _fetchUserData();
   }
 
@@ -41,10 +71,155 @@ class _DashboardPageState extends State<DashboardPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
       });
     }
   }
 
+<<<<<<< HEAD
+  // Fungsi Logout
+  void _handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Hapus semua sesi
+    if (!mounted) return;
+    
+    // Kembali ke Login dan hapus history route
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          // --- HEADER DASHBOARD ---
+          Container(
+            height: 200,
+            padding: const EdgeInsets.only(top: 50, left: 20, right: 20, bottom: 20),
+            decoration: const BoxDecoration(
+              color: AppColors.primary, // Warna Biru Dongker
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 35,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 40, color: AppColors.primary),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _userName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        _userJabatan,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: _handleLogout,
+                  icon: const Icon(Icons.logout, color: Colors.white),
+                )
+              ],
+            ),
+          ),
+
+          // --- MENU GRID ---
+          Expanded(
+            child: GridView.count(
+              padding: const EdgeInsets.all(25),
+              crossAxisCount: 2,
+              mainAxisSpacing: 20,
+              crossAxisSpacing: 20,
+              children: [
+                _buildMenuItem(
+                  "Absen Masuk", 
+                  Icons.camera_alt, 
+                  Colors.green, 
+                  () {
+                    // Navigator.pushNamed(context, '/presensi/create', arguments: {'ket': 'in'});
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur Absen Masuk (Segera)")));
+                  }
+                ),
+                _buildMenuItem(
+                  "Absen Pulang", 
+                  Icons.camera_alt, 
+                  Colors.red, 
+                  () {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur Absen Pulang (Segera)")));
+                  }
+                ),
+                _buildMenuItem(
+                  "Histori", 
+                  Icons.history, 
+                  Colors.blue, 
+                  () {
+                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur Histori (Segera)")));
+                  }
+                ),
+                _buildMenuItem(
+                  "Izin", 
+                  Icons.mail, 
+                  Colors.orange, 
+                  () {
+                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur Izin (Segera)")));
+                  }
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              // [FIX] Menggunakan .withValues() agar tidak deprecated
+              color: Colors.black.withValues(alpha: 0.1), 
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 45, color: color),
+            const SizedBox(height: 10),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+=======
   String getGreeting() {
     final hour = DateTime.now().hour;
     if (hour >= 4 && hour < 12) {
@@ -252,4 +427,5 @@ Widget _buildIconItem({
     ),
   );
 }
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
 }
