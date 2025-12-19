@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
+import 'package:presensigps/utils/app_colors.dart';
+import 'package:presensigps/pages/auth/login_page.dart';
+import 'package:presensigps/pages/auth/register_page.dart';
+import 'package:presensigps/pages/auth/forgot_password_page.dart';
+import 'package:presensigps/pages/dashboard/dashboard_page.dart';
+=======
 import 'package:presensigps/pages/auth/forgot_password_page.dart';
 import 'package:presensigps/pages/auth/login_page.dart';
 import 'package:presensigps/pages/auth/register_page.dart';
@@ -9,6 +16,7 @@ import 'package:presensigps/pages/profile/profile_page.dart';
 import 'package:presensigps/utils/session_manager.dart';
 import 'package:presensigps/pages/presensi/presensi_create_page.dart';
 import 'package:presensigps/pages/settings/settings_page.dart';
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
 
 void main() {
   runApp(const MyApp());
@@ -20,6 +28,50 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+<<<<<<< HEAD
+      debugShowCheckedModeBanner: false,
+      title: 'Presensi App',
+      
+      // --- TEMA APLIKASI ---
+      theme: ThemeData(
+        useMaterial3: true,
+        // Mengatur warna utama aplikasi agar sesuai dengan Laravel (#0A234E)
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+        ),
+        // Mengatur style AppBar secara global agar Biru Dongker teks Putih
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+        ),
+        // Mengatur style input field agar seragam
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          prefixIconColor: AppColors.primary,
+        ),
+      ),
+
+      // --- ROUTING (NAVIGASI) ---
+      initialRoute: '/login', // Halaman pertama yang dibuka
+      routes: {
+        // Halaman Login
+        '/login': (context) => const LoginPage(),
+        
+        // Halaman Register (Ini yang memperbaiki halaman kosong sebelumnya)
+        '/register': (context) => const RegisterPage(),
+        
+        // Halaman Lupa Password
+        '/forgot-password': (context) => const ForgotPasswordPage(),
+        '/dashboard': (context) => const DashboardPage(),
+      },
+    );
+  }
+}
+=======
       title: 'Presensi GPS',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -76,3 +128,4 @@ class _SplashScreenState extends State<SplashScreen> {
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
