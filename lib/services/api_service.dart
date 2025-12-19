@@ -1,4 +1,108 @@
 import 'dart:convert';
+<<<<<<< HEAD
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class ApiService {
+  static const String baseUrl = "http://192.168.100.3:8000/api/";
+
+  // --- LOGIN ---
+  static Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        body: {'email': email, 'password': password},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        return {'status': true, 'message': 'Login Berhasil'};
+      }
+      return {'status': false, 'message': 'Login Gagal'};
+    } catch (e) {
+      return {'status': false, 'message': 'Gagal koneksi: $e'};
+    }
+  }
+
+  // --- REGISTER ---
+  static Future<Map<String, dynamic>> register(Map<String, dynamic> data) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        body: data,
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {'status': true, 'message': 'Registrasi Berhasil!'};
+      }
+      return {'status': false, 'message': 'Gagal Mendaftar'};
+    } catch (e) {
+      return {'status': false, 'message': 'Error: $e'};
+    }
+  }
+
+  // --- LUPA PASSWORD ---
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/forgot-password'),
+        body: {'email': email},
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'status': true, 'message': data['message']};
+      }
+      return {'status': false, 'message': data['message'] ?? 'Gagal'};
+    } catch (e) {
+      return {'status': false, 'message': 'Error: $e'};
+    }
+  }
+
+  // LIST DEPARTEMEN
+  static Future<dynamic> getDepartemenList() async {
+    try {
+      final response = await http.get(Uri.parse("$baseUrl/departemen"));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {'status': 'error', 'message': 'Gagal ambil departemen'};
+    } catch (e) {
+      return {'status': 'error', 'message': 'Error jaringan'};
+    }
+  }
+
+  // RESET PASSWORD
+  static Future<dynamic> directResetPassword(Map<String, dynamic> data) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/direct-reset-password"),
+        body: data,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Gagal terhubung ke server.'};
+    }
+  }
+
+  // JAM KERJA
+  static Future<dynamic> getJamKerjaList() async {
+    try {
+      final response = await http.get(Uri.parse("$baseUrl/jam-kerja"));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {'status': 'error', 'message': 'Gagal ambil jam kerja'};
+    } catch (e) {
+      return {'status': 'error', 'message': 'Error jaringan'};
+    }
+  }
+
+
+
+}
+  
+  
+=======
 import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -136,3 +240,4 @@ class ApiService {
       }
     }
     }
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
