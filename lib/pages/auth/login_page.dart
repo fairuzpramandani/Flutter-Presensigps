@@ -22,7 +22,11 @@ class _LoginPageState extends State<LoginPage> {
     message = null;
   });
 
+<<<<<<< HEAD
+  final res = await ApiService.login(
+=======
   final res = await ApiService.login( // 1. Panggil API
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
     emailController.text,
     passwordController.text,
   );
@@ -63,7 +67,10 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 20),
 
+<<<<<<< HEAD
+=======
               // image
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
               Image.asset(
                 AppAssets.logo,
                 height: 150,
@@ -78,7 +85,10 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 25),
 
+<<<<<<< HEAD
+=======
               // alert
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
               if (message != null)
                 Container(
                   padding:

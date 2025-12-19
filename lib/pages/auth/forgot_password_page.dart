@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:presensigps/services/api_service.dart';
+<<<<<<< HEAD
+import 'package:presensigps/utils/app_colors.dart';
+=======
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -10,6 +14,33 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
+<<<<<<< HEAD
+  bool _isLoading = false;
+
+  void _handleSubmit() async {
+    if (_emailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email wajib diisi")),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final result = await ApiService.forgotPassword(_emailController.text);
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    if (result['status'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message']), backgroundColor: Colors.green),
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message']), backgroundColor: Colors.red),
+      );
+=======
   final _formKey = GlobalKey<FormState>();
   
   bool _isLoading = false;
@@ -56,12 +87,47 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _message = res['message'] ?? res['errors']?['email']?.join('\n') ?? "Gagal mengirim link reset.";
         _success = false;
       });
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
+      appBar: AppBar(title: const Text("Lupa Password")),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const Text("Masukkan email Anda untuk reset password"),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: "Email",
+                prefixIcon: Icon(Icons.email),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: _isLoading ? null : _handleSubmit,
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white) 
+                  : const Text("Kirim"),
+              ),
+            )
+          ],
+=======
       appBar: AppBar(
         title: const Text("Lupa Password"),
       ),
@@ -145,6 +211,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ],
             ),
           ),
+>>>>>>> 0d66115c9de84a8bda2a8b133345512240efbc5b
         ),
       ),
     );
