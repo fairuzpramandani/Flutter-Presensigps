@@ -48,6 +48,7 @@ dependencies:
   connectivity_plus: ^5.0.1
   sqflite: ^2.3.0
   path_provider: ^2.1.1
+  root_jailbreak_sniffer: ^1.1.4
 
 
 dev_dependencies:

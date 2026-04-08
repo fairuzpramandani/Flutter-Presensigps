@@ -6,27 +6,29 @@ plugins {
 
 android {
     namespace = "com.example.presensigps"
-    compileSdk = 36 
-    ndkVersion = flutter.ndkVersion
+    compileSdk = flutter.compileSdkVersion
+    
+    // 1. TAMBAHKAN BARIS INI UNTUK PACKAGE ANTI-ROOT:
+    ndkVersion = "29.0.14033849" 
 
+    // --- TAMBAHKAN 2 BLOK INI UNTUK MENYAMAKAN VERSI JAVA & KOTLIN ---
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
+    // ----------------------------------------------------------------
 
     defaultConfig {
-        // Ganti dengan ID aplikasi Anda jika berbeda
         applicationId = "com.example.presensigps"
+        minSdk = 24
+        targetSdk = flutter.targetSdkVersion
 
-       minSdk = flutter.minSdkVersion.toInt()
-       targetSdk = flutter.targetSdkVersion.toInt()
-        
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     buildTypes {

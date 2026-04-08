@@ -24,6 +24,7 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
   bool _isCameraInitialized = false;
   bool _isSubmitting = false;
   bool _isInsideRadius = false;
+  bool _isFakeGps = false;
 
   List<CircleMarker> _officeCircles = [];
   List<dynamic> _rawOfficeData = [];
@@ -95,9 +96,19 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high
       );
+      
       if (mounted) {
-        setState(() => _currentPosition = position);
+        setState(() {
+          _currentPosition = position;
+          _isFakeGps = position.isMocked; 
+        });
         _checkRadius();
+
+        if (_isFakeGps) {
+          String? email = await SessionManager.getEmail();
+          await ApiService.laporKecurangan(email ?? 'Unknown', 'Fake_GPS', 'Tuyul GPS terdeteksi saat buka peta.');
+          _showSnackbar("Peringatan! Matikan aplikasi Fake GPS Anda.");
+        }
       }
     } catch (e) {
       debugPrint("Gagal GPS: $e");
@@ -147,7 +158,9 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
       bool isMock = false;
       try {
         isMock = _currentPosition!.isMocked; 
-      } catch (e) {}
+      } catch (e) {
+        debugPrint("Gagal cek lokasi palsu: $e");
+      }
 
       if (isMock) {
         String? email = await SessionManager.getEmail();
@@ -160,7 +173,6 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
       XFile image = await _cameraController!.takePicture();
       String? token = await SessionManager.getToken();
       
-      // KOMPRESI FOTO AGAR PHP TIDAK MATI
       final String targetPath = image.path.replaceFirst('.jpg', '_kecil.jpg');
       var compressedFile = await FlutterImageCompress.compressAndGetFile(
         image.path, 
@@ -173,8 +185,6 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
       if (compressedFile == null) return;
 
       var uri = Uri.parse("${ApiService.baseUrl}/api/presensi/store");
-
-      // KIRIM SEBAGAI MULTIPART FILE
       var request = http.MultipartRequest("POST", uri);
       
       if (token != null) {
@@ -230,7 +240,7 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
     );
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -286,12 +296,34 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
               ),
             ],
           ),
+
+          if (_isFakeGps)
+            Positioned(
+              bottom: (MediaQuery.of(context).size.height / 3) + 45,
+              left: 20, right: 20,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade800,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8)
+                  ]
+                ),
+                child: const Text(
+                  "Akses Ditolak!\nFake GPS (Lokasi Palsu) Terdeteksi.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+
           Positioned(
             bottom: (MediaQuery.of(context).size.height / 3) - 35,
             left: 0, right: 0,
             child: Center(
               child: GestureDetector(
-                onTap: (_isSubmitting) ? null : () {
+                onTap: (_isSubmitting || _isFakeGps) ? null : () {
                   if (!_isInsideRadius) {
                     _showSnackbar("Maaf, Anda berada di luar radius kantor!");
                   } else {
@@ -302,9 +334,9 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
                   width: 70, height: 70,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: _isFakeGps ? Colors.grey.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.3),
                     border: Border.all(
-                      color: _isInsideRadius ? Colors.white : Colors.red, 
+                      color: _isFakeGps ? Colors.grey : (_isInsideRadius ? Colors.white : Colors.red), 
                       width: 3
                     ),
                   ),
@@ -313,9 +345,9 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
                         padding: EdgeInsets.all(15.0),
                         child: CircularProgressIndicator(color: Colors.white),
                       )
-                    : const Icon(
-                        Icons.camera_alt_outlined, 
-                        color: Colors.white, 
+                    : Icon(
+                        _isFakeGps ? Icons.lock : Icons.camera_alt_outlined, 
+                        color: _isFakeGps ? Colors.grey.shade300 : Colors.white, 
                         size: 35
                       ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart'; 
 import 'package:presensigps/services/api_service.dart';
 import 'package:presensigps/pages/auth/login_page.dart';
@@ -14,8 +15,12 @@ import 'package:presensigps/pages/izin/buat_izin_page.dart';
 import 'package:presensigps/pages/presensi/histori_page.dart';
 import '../pages/presensi/face_enrollment_page.dart';
 
+// FIX 1: Import yang benar sesuai dokumentasi package
+import 'package:root_jailbreak_sniffer/rjsniffer.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await initializeDateFormatting('id_ID', null);
   runApp(const MyApp());
 }
@@ -46,8 +51,6 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => const ProfilePage(),
         '/profile': (context) => const ProfilePage(),
         '/profile/edit': (context) => const EditProfilePage(),
-        
-        // Route Presensi
         '/presensi/create': (context) {
           final Object? args = ModalRoute.of(context)?.settings.arguments;
           if (args is Map<String, dynamic>) {
@@ -55,13 +58,8 @@ class MyApp extends StatelessWidget {
           }
           return const PresensiCreatePage(ket: 'in'); 
         },
-        
-        // ROUTE HISTORI
         '/presensi/histori': (context) => const HistoriPage(),
-
         '/registrasi-wajah': (context) => const FaceEnrollmentPage(),
-
-        // Route Izin
         '/presensi/izin': (context) => const IzinPage(), 
         '/izin/list': (context) => const IzinPage(),
         '/presensi/buatizin': (context) => const BuatIzinPage(),
@@ -78,15 +76,28 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _isRootBlocked = false;
+
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
+    _checkRootAndLoginStatus();
   }
 
-  Future<void> _checkLoginStatus() async {
+  Future<void> _checkRootAndLoginStatus() async {
+    bool jailbroken = false;
+    try {
+      jailbroken = await Rjsniffer.amICompromised() ?? false;
+    } catch (e) {
+      debugPrint("Gagal cek root: $e");
+    }
+
+    if (jailbroken) {
+      if (mounted) setState(() => _isRootBlocked = true);
+      return; 
+    }
+
     await Future.delayed(const Duration(seconds: 2));
-    
     final token = await SessionManager.getToken();
     final email = await SessionManager.getEmail();
     
@@ -108,13 +119,49 @@ class _SplashScreenState extends State<SplashScreen> {
       } else {
         Navigator.pushReplacementNamed(context, '/dashboard');
       }
-
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
   }
+
   @override
   Widget build(BuildContext context) {
+    if (_isRootBlocked) {
+      return Scaffold(
+        backgroundColor: Colors.red.shade900,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(30.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.gpp_bad_outlined, size: 100, color: Colors.white),
+                const SizedBox(height: 20),
+                const Text("AKSES DIBLOKIR!", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 15),
+                const Text(
+                  "Perangkat Anda terdeteksi telah di-Root atau dimodifikasi.\n\nDemi alasan keamanan, aplikasi Presensi tidak dapat dijalankan pada perangkat ini.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.5),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.red.shade900,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  ),
+                  // Menggunakan SystemNavigator.pop() untuk keluar dari aplikasi
+                  onPressed: () => SystemNavigator.pop(),
+                  child: const Text("TUTUP APLIKASI", style: TextStyle(fontWeight: FontWeight.bold)),
+                )
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A234E),
       body: Center(
