@@ -45,10 +45,12 @@ dependencies:
   intl: ^0.20.2
   cupertino_icons: ^1.0.8
   flutter_map_cancellable_tile_provider: ^2.0.0
-  connectivity_plus: ^5.0.1
+  connectivity_plus: ^7.1.0
   sqflite: ^2.3.0
-  path_provider: ^2.1.1
+  path_provider: ^2.1.5
   root_jailbreak_sniffer: ^1.1.4
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
 
 
 dev_dependencies:

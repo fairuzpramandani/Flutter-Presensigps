@@ -14,14 +14,18 @@ import 'package:presensigps/pages/izin/izin_page.dart';
 import 'package:presensigps/pages/izin/buat_izin_page.dart';
 import 'package:presensigps/pages/presensi/histori_page.dart';
 import '../pages/presensi/face_enrollment_page.dart';
-
-// FIX 1: Import yang benar sesuai dokumentasi package
 import 'package:root_jailbreak_sniffer/rjsniffer.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await initializeDateFormatting('id_ID', null);
+  await Hive.initFlutter();
+  await Hive.openBox('absen_offline');
+  await Hive.openBox('konfigurasi'); 
+  await Hive.openBox('audit_offline');
   runApp(const MyApp());
 }
 

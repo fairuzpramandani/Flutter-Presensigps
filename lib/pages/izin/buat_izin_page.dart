@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:presensigps/services/api_service.dart';
 
 class BuatIzinPage extends StatefulWidget {
@@ -12,15 +14,15 @@ class BuatIzinPage extends StatefulWidget {
 class _BuatIzinPageState extends State<BuatIzinPage> {
   final TextEditingController _tglController = TextEditingController();
   final TextEditingController _ketController = TextEditingController();
-  String? _selectedStatus; // Menyimpan nilai 'i' atau 's'
+  String? _selectedStatus; 
   bool _isSubmitting = false;
+  File? _buktiFoto; // Variabel untuk menyimpan foto bukti sakit
 
-  // Fungsi memunculkan DatePicker
   Future<void> _selectDate(BuildContext context) async {
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime.now(), // Tidak boleh tanggal kemarin
+      firstDate: DateTime.now(), 
       lastDate: DateTime(2100),
     );
     if (picked != null) {
@@ -30,9 +32,19 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
     }
   }
 
-  // Fungsi Kirim Data
+  // FUNGSI: Ambil Foto dari Galeri/Kamera
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    
+    if (image != null) {
+      setState(() {
+        _buktiFoto = File(image.path);
+      });
+    }
+  }
+
   Future<void> _submitIzin() async {
-    // Validasi Input (Sama seperti JS di Blade)
     if (_tglController.text.isEmpty) {
       _showSnackbar("Tanggal harus diisi!", Colors.orange);
       return;
@@ -45,27 +57,32 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
       _showSnackbar("Keterangan harus diisi!", Colors.orange);
       return;
     }
+    
+    // Validasi Wajib Foto jika Status = Sakit (s)
+    if (_selectedStatus == 's' && _buktiFoto == null) {
+      _showSnackbar("Wajib melampirkan foto Surat Dokter/Bukti Sakit!", Colors.red);
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
-    // Panggil ApiService
-    final result = await ApiService.storeIzin(
+    // Kirim menggunakan ApiService khusus Multipart
+    final result = await ApiService.storeIzinWithFile(
       _tglController.text,
       _selectedStatus!,
-      _ketController.text
+      _ketController.text,
+      _buktiFoto, 
     );
 
     if (mounted) {
       setState(() => _isSubmitting = false);
 
       if (result['status'] == 'success') {
-        // Jika Sukses
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Berhasil mengirim pengajuan!")),
         );
-        Navigator.pop(context); // Kembali ke list
+        Navigator.pop(context); 
       } else {
-        // Jika Gagal (Misal tanggal duplikat)
         _showSnackbar(result['message'] ?? "Gagal menyimpan data", Colors.red);
       }
     }
@@ -101,18 +118,17 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
             const Text("Formulir Pengajuan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
             
-            // Card Container
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // INPUT TANGGAL
                     TextField(
                       controller: _tglController,
-                      readOnly: true, // Agar tidak bisa diketik manual
+                      readOnly: true, 
                       onTap: () => _selectDate(context),
                       decoration: const InputDecoration(
                         labelText: "Tanggal",
@@ -123,9 +139,8 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // INPUT STATUS (Dropdown)
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedStatus,
+                      initialValue: _selectedStatus, // Perbaikan linter (initialValue bukan value)
                       decoration: const InputDecoration(
                         labelText: "Status",
                         prefixIcon: Icon(Icons.info_outline),
@@ -136,12 +151,15 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
                         DropdownMenuItem(value: "s", child: Text("Sakit")),
                       ],
                       onChanged: (val) {
-                        setState(() => _selectedStatus = val);
+                        setState(() {
+                          _selectedStatus = val;
+                          // Reset foto jika user ganti pikiran jadi Izin
+                          if (val == 'i') _buktiFoto = null; 
+                        });
                       },
                     ),
                     const SizedBox(height: 20),
 
-                    // INPUT KETERANGAN
                     TextField(
                       controller: _ketController,
                       maxLines: 4,
@@ -153,9 +171,40 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
 
-                    // TOMBOL KIRIM
+                    // TAMPILKAN TOMBOL UPLOAD JIKA STATUS == 's'
+                    if (_selectedStatus == 's') ...[
+                      const Text("Bukti Sakit (Surat Dokter)", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: _pickImage,
+                        child: Container(
+                          width: double.infinity,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey, style: BorderStyle.solid),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey[100],
+                          ),
+                          child: _buktiFoto != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(_buktiFoto!, fit: BoxFit.cover),
+                                )
+                              : const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.camera_alt, size: 40, color: Colors.grey),
+                                    SizedBox(height: 8),
+                                    Text("Ketuk untuk Upload Foto", style: TextStyle(color: Colors.grey)),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                    ],
+
                     SizedBox(
                       width: double.infinity,
                       height: 50,

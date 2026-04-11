@@ -9,6 +9,9 @@ import 'package:http/http.dart' as http;
 import 'package:presensigps/services/api_service.dart';
 import 'package:presensigps/utils/session_manager.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:root_jailbreak_sniffer/rjsniffer.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive/hive.dart';
 
 class PresensiCreatePage extends StatefulWidget {
   final String ket; 
@@ -36,9 +39,12 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
   }
 
   Future<void> _initAllData() async {
-    await _determinePosition();
-    await _fetchOfficeLocations();
     await _initializeCamera();
+    
+    await Future.wait([
+      _determinePosition(),
+      _fetchOfficeLocations(),
+    ]);
   }
 
   void _checkRadius() {
@@ -87,41 +93,11 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
     }
   }
 
-  Future<void> _determinePosition() async {
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
-      );
-      
-      if (mounted) {
-        setState(() {
-          _currentPosition = position;
-          _isFakeGps = position.isMocked; 
-        });
-        _checkRadius();
-
-        if (_isFakeGps) {
-          String? email = await SessionManager.getEmail();
-          await ApiService.laporKecurangan(email ?? 'Unknown', 'Fake_GPS', 'Tuyul GPS terdeteksi saat buka peta.');
-          _showSnackbar("Peringatan! Matikan aplikasi Fake GPS Anda.");
-        }
-      }
-    } catch (e) {
-      debugPrint("Gagal GPS: $e");
-    }
-  }
-
   Future<void> _fetchOfficeLocations() async {
-    try {
-      final responseBody = await ApiService.get("/api/konfigurasi-lokasi");
-      final result = jsonDecode(responseBody);
-      
-      if (result['status'] == 'success' && mounted) {
-        _rawOfficeData = result['data'];
+    var box = Hive.box('konfigurasi');
+    
+    void gambarRadius() {
+      if (mounted) {
         setState(() {
           _officeCircles = _rawOfficeData.map((k) {
             var coords = k['lokasi_kantor'].split(',');
@@ -135,10 +111,115 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
             );
           }).toList();
         });
-        _checkRadius();
+      }
+      _checkRadius();
+    }
+
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    bool isOffline = connectivityResult.contains(ConnectivityResult.none);
+
+    if (isOffline) {
+      debugPrint("📴 [OFFLINE] Membaca radius dari memori HP...");
+      if (box.containsKey('lokasi_kantor_string')) {
+        try {
+          _rawOfficeData = jsonDecode(box.get('lokasi_kantor_string'));
+          gambarRadius();
+        } catch (e) { debugPrint("Gagal baca memori radius: $e"); }
+      }
+      return;
+    }
+
+    try {
+      final responseBody = await ApiService.get("/api/konfigurasi-lokasi");
+      final result = jsonDecode(responseBody);
+      
+      if (result['status'] == 'success') {
+        _rawOfficeData = result['data'];
+        box.put('lokasi_kantor_string', jsonEncode(_rawOfficeData));
+        debugPrint("✅ [ONLINE] Radius kantor berhasil ditarik & disimpan!");
+        gambarRadius();
+      } else {
+        throw Exception("Server API Error"); 
       }
     } catch (e) {
-      debugPrint("Error Load Lokasi: $e");
+      debugPrint("⚠️ API Gagal, fallback ke memori HP: $e");
+      if (box.containsKey('lokasi_kantor_string')) {
+        _rawOfficeData = jsonDecode(box.get('lokasi_kantor_string'));
+        gambarRadius();
+      }
+    }
+  }
+
+  Future<void> _determinePosition() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 7),
+        );
+      } catch (e) {
+        position = await Geolocator.getLastKnownPosition();
+      }
+
+      if (position == null) return;
+      
+      final Position validPosition = position; 
+      
+      if (mounted) {
+        setState(() {
+          _currentPosition = validPosition;
+          if (validPosition.isMocked && validPosition.accuracy < 100) {
+            _isFakeGps = true;
+          } else {
+            _isFakeGps = false;
+          }
+        });
+        
+        _checkRadius();
+
+        var connectivityResult = await (Connectivity().checkConnectivity());
+        bool isOffline = connectivityResult.contains(ConnectivityResult.none);
+        String? email = await SessionManager.getEmail();
+
+        if (_isFakeGps) {
+          if (!isOffline) {
+            await ApiService.laporKecurangan(email ?? 'Unknown', 'Fake_GPS', 'Tuyul GPS terdeteksi (Online).');
+          } else {
+            Hive.box('audit_offline').add({
+              'email': email ?? 'Unknown',
+              'tipe': 'Fake_GPS',
+              'pesan': 'Terdeteksi Fake GPS saat Offline. Akurasi: ${validPosition.accuracy}'
+            });
+          }
+          _showSnackbar("Peringatan! Lokasi palsu terdeteksi.");
+        }
+
+        bool isRooted = await Rjsniffer.amICompromised() ?? false;
+        
+        if (isRooted) {
+          if (!isOffline) {
+            await ApiService.laporKecurangan(email ?? 'Unknown', 'Jailbreak', 'Perangkat Root terdeteksi.');
+          } else {
+            Hive.box('audit_offline').add({
+              'email': email ?? 'Unknown',
+              'tipe': 'Jailbreak',
+              'pesan': 'Perangkat Root terdeteksi saat Mode Pesawat (Offline).'
+            });
+          }
+          _showSnackbar("Peringatan! Perangkat Anda telah di-Root/Jailbreak. Akses ditolak.");
+          setState(() {
+            _isFakeGps = true; 
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Gagal GPS: $e");
     }
   }
 
@@ -158,13 +239,9 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
       bool isMock = false;
       try {
         isMock = _currentPosition!.isMocked; 
-      } catch (e) {
-        debugPrint("Gagal cek lokasi palsu: $e");
-      }
+      } catch (e) { debugPrint("Gagal cek lokasi palsu: $e"); }
 
       if (isMock) {
-        String? email = await SessionManager.getEmail();
-        await ApiService.laporKecurangan(email ?? 'Unknown', 'Fake_GPS', 'Tuyul GPS terdeteksi.');
         _showSnackbar("Akses Ditolak! Matikan aplikasi Fake GPS Anda.");
         setState(() => _isSubmitting = false);
         return;
@@ -182,48 +259,87 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
         keepExif: false,
       );
 
-      if (compressedFile == null) return;
-
-      var uri = Uri.parse("${ApiService.baseUrl}/api/presensi/store");
-      var request = http.MultipartRequest("POST", uri);
-      
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-      request.headers['Accept'] = 'application/json';
-      
-      request.fields['ket'] = widget.ket;
-      request.fields['lokasi'] = "${_currentPosition!.latitude},${_currentPosition!.longitude}";
-      request.files.add(await http.MultipartFile.fromPath('image', compressedFile.path));
-
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-
-      if (!mounted) return;
-
-      if (response.statusCode != 200) {
-        String rawError = responseData.length > 100 ? "${responseData.substring(0, 100)}..." : responseData;
-        _showSnackbar("ERROR SERVER ${response.statusCode}: \n$rawError");
+      if (compressedFile == null) {
         setState(() => _isSubmitting = false);
-        return; 
+        return;
       }
 
-      List<String> resultSplit = responseData.split('|');
+      Future<void> simpanKeLokal() async {
+        debugPrint("==== 📴 MENYIMPAN KE LOKAL ====");
+        var offlineBox = Hive.box('absen_offline'); 
+        
+        await offlineBox.add({
+          'lokasi': "${_currentPosition!.latitude},${_currentPosition!.longitude}",
+          'image_path': compressedFile.path, 
+          'ket': widget.ket,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
 
-      if (resultSplit.isNotEmpty) {
-        if (resultSplit[0] == 'success') {
-           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(content: Text(resultSplit[1]), backgroundColor: Colors.green),
-           );
-           Navigator.pop(context); 
-        } else {
-           String errorMessage = resultSplit.length > 1 ? resultSplit[1] : responseData;
-           _showSnackbar(errorMessage);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Jaringan bermasalah! Absen disimpan di HP dan akan dikirim otomatis nanti."),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+          Navigator.pop(context);
         }
       }
 
+      var connectivityResult = await (Connectivity().checkConnectivity());
+      bool isOffline = connectivityResult.contains(ConnectivityResult.none);
+
+      if (isOffline) {
+        await simpanKeLokal();
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
+      try {
+        var uri = Uri.parse("${ApiService.baseUrl}/api/presensi/store");
+        var request = http.MultipartRequest("POST", uri);
+        
+        if (token != null) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+        request.headers['Accept'] = 'application/json';
+        
+        request.fields['ket'] = widget.ket;
+        request.fields['lokasi'] = "${_currentPosition!.latitude},${_currentPosition!.longitude}";
+        request.files.add(await http.MultipartFile.fromPath('image', compressedFile.path));
+
+        var response = await request.send().timeout(const Duration(seconds: 10));
+        var responseData = await response.stream.bytesToString();
+
+        if (!mounted) return;
+
+        if (response.statusCode != 200) {
+          String rawError = responseData.length > 100 ? "${responseData.substring(0, 100)}..." : responseData;
+          _showSnackbar("ERROR SERVER ${response.statusCode}: \n$rawError");
+          return; 
+        }
+
+        List<String> resultSplit = responseData.split('|');
+
+        if (resultSplit.isNotEmpty) {
+          if (resultSplit[0] == 'success') {
+             ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(content: Text(resultSplit[1]), backgroundColor: Colors.green),
+             );
+             Navigator.pop(context); 
+          } else {
+             String errorMessage = resultSplit.length > 1 ? resultSplit[1] : responseData;
+             _showSnackbar(errorMessage);
+          }
+        }
+      } catch (e) {
+        debugPrint("Timeout/Error koneksi saat mengirim: $e");
+        await simpanKeLokal();
+      }
+
     } catch (e) {
-      if (mounted) _showSnackbar("Koneksi HP terputus: $e");
+      if (mounted) _showSnackbar("Terjadi kesalahan: $e");
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
