@@ -11,18 +11,18 @@ class ApiService {
     if (kIsWeb) {
       return "http://127.0.0.1:8000"; 
     } else if (Platform.isAndroid) {
-      return "http://192.168.100.3:8000"; 
+      return "http://192.168.100.8:8000"; 
     }
-    return "http://192.168.100.3:8000";
+    return "http://192.168.100.8:8000";
   }
 
   static String get pythonUrl {
     if (kIsWeb) {
       return "http://127.0.0.1:5000"; 
     } else if (Platform.isAndroid) {
-      return "http://192.168.100.3:5000"; 
+      return "http://192.168.100.8:5000"; 
     }
-    return "http://192.168.100.3:5000";
+    return "http://192.168.100.8:5000";
   }
 
   static Map<String, String> headers = {
@@ -34,7 +34,6 @@ class ApiService {
         String? token = await SessionManager.getToken();
         if (token == null) return {'status': 'error', 'message': 'Token tidak ditemukan'};
 
-        // PERBAIKAN: URL disamakan dengan route Laravel yang benar
         var uri = Uri.parse("$baseUrl/api/presensi/storeizin");
         var request = http.MultipartRequest("POST", uri);
         
@@ -49,10 +48,9 @@ class ApiService {
           request.files.add(await http.MultipartFile.fromPath('bukti', fileBukti.path));
         }
 
-        var response = await request.send();
+        var response = await request.send(); 
         var responseData = await response.stream.bytesToString();
 
-        // TAMBAHAN: Untuk mengintip jawaban server jika gagal lagi
         debugPrint("JAWABAN SERVER IZIN: $responseData");
         debugPrint("STATUS CODE IZIN: ${response.statusCode}");
 
