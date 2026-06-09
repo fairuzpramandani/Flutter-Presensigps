@@ -20,7 +20,6 @@ class _FaceEnrollmentPageState extends State<FaceEnrollmentPage> {
   String? _cameraError;
   
   int _currentStep = 1;
-  XFile? _frontFaceImage;
 
   @override
   void initState() {
@@ -68,7 +67,6 @@ class _FaceEnrollmentPageState extends State<FaceEnrollmentPage> {
       XFile image = await _cameraController!.takePicture();
 
       if (_currentStep == 1) {
-        _frontFaceImage = image;
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) setState(() { _currentStep = 2; _isSubmitting = false; });
         return;
@@ -84,12 +82,14 @@ class _FaceEnrollmentPageState extends State<FaceEnrollmentPage> {
         return;
       } 
       else if (_currentStep == 4) {
+        String? email = await SessionManager.getEmail();
         String? token = await SessionManager.getToken();
         
-        final String targetPath = _frontFaceImage!.path.replaceFirst('.jpg', '_kecil.jpg');
+        XFile fotoFinal = image; 
+        final String targetPath = fotoFinal.path.replaceFirst('.jpg', '_kecil.jpg');
         
         var compressedFile = await FlutterImageCompress.compressAndGetFile(
-          _frontFaceImage!.path,
+          fotoFinal.path,
           targetPath,
           quality: 60,
           autoCorrectionAngle: true,
@@ -111,24 +111,45 @@ class _FaceEnrollmentPageState extends State<FaceEnrollmentPage> {
 
         request.files.add(await http.MultipartFile.fromPath('image', compressedFile.path));
 
-        var response = await request.send();
-        var responseData = await response.stream.bytesToString();
+        if (email != null) {
+          request.fields['email'] = email;
+        }
+
+        var streamedResponse = await request.send();
+        var response = await http.Response.fromStream(streamedResponse);
 
         if (!mounted) return;
 
         if (response.statusCode == 200) {
-          var jsonResponse = jsonDecode(responseData);
+          var jsonResponse = jsonDecode(response.body);
           if (jsonResponse['status'] == 'success') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Wajah berhasil didaftarkan!"), backgroundColor: Colors.green),
+            
+            var akurasi = jsonResponse['accuracy'] ?? '100';
+
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text("Registrasi Berhasil", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                content: Text("Wajah Anda sukses divalidasi oleh AI Python!\nTingkat Akurasi: $akurasi%"),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(context, '/dashboard');
+                    },
+                    child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold)),
+                  )
+                ],
+              ),
             );
-            Navigator.pushReplacementNamed(context, '/dashboard');
           } else {
             _showError(jsonResponse['message'] ?? "Gagal memproses wajah.");
             setState(() => _currentStep = 1); 
           }
         } else {
-          _showError("Kesalahan server (${response.statusCode}): \n$responseData");
+          _showError("Kesalahan server (${response.statusCode}): \n${response.body}");
           setState(() => _currentStep = 1);
         }
       }
@@ -254,11 +275,12 @@ class _FaceEnrollmentPageState extends State<FaceEnrollmentPage> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
+                        // FIX: Mengubah .withOpacity(0.3) menjadi .withValues(alpha: 0.3)
                         color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 10, 
                         spreadRadius: 2,
                       )
-                    ]
+                    ],
                   ),
                   child: _isSubmitting
                       ? const Padding(

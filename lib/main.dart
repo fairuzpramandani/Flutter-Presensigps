@@ -155,7 +155,6 @@ class _SplashScreenState extends State<SplashScreen> {
                     foregroundColor: Colors.red.shade900,
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   ),
-                  // Menggunakan SystemNavigator.pop() untuk keluar dari aplikasi
                   onPressed: () => SystemNavigator.pop(),
                   child: const Text("TUTUP APLIKASI", style: TextStyle(fontWeight: FontWeight.bold)),
                 )

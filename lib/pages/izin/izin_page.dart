@@ -21,7 +21,6 @@ class _IzinPageState extends State<IzinPage> {
   }
 
   Future<void> _fetchData() async {
-    // Panggil fungsi yang baru kita buat di ApiService
     final result = await ApiService.getIzinList();
     
     if (mounted) {
@@ -40,10 +39,10 @@ class _IzinPageState extends State<IzinPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushReplacementNamed(context, '/dashboard'),
         ),
         title: const Text("Data Izin & Sakit", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF0A234E), // Sesuaikan warna Blade
+        backgroundColor: const Color(0xFF0A234E), 
         centerTitle: true,
       ),
       body: _isLoading
@@ -56,12 +55,11 @@ class _IzinPageState extends State<IzinPage> {
                   itemBuilder: (context, index) {
                     var d = _dataIzin[index];
                     
-                    // Format Tanggal (Contoh: 12 Januari 2024)
                     String formattedDate = "";
                     try {
                       formattedDate = DateFormat("d MMMM yyyy", "id_ID").format(DateTime.parse(d['tgl_izin']));
                     } catch (e) {
-                      formattedDate = d['tgl_izin']; // Fallback jika format gagal
+                      formattedDate = d['tgl_izin'];
                     }
 
                     return Card(
@@ -76,12 +74,10 @@ class _IzinPageState extends State<IzinPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Tampilkan Tanggal & Status (Sakit/Izin)
                                 Text(
                                   "$formattedDate (${d['status'] == 's' ? 'Sakit' : 'Izin'})",
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
-                                // Badge Status Approval
                                 _buildStatusBadge(d['status_approved']),
                               ],
                             ),
@@ -102,7 +98,6 @@ class _IzinPageState extends State<IzinPage> {
         backgroundColor: const Color(0xFF0A234E),
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () async {
-          // Buka halaman form, lalu refresh data saat kembali
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const BuatIzinPage()),
@@ -114,11 +109,9 @@ class _IzinPageState extends State<IzinPage> {
     );
   }
 
-  // Widget kecil untuk badge status (Menunggu, Disetujui, Ditolak)
   Widget _buildStatusBadge(dynamic status) {
     Color color;
     String text;
-    // Konversi ke int agar aman
     int s = int.tryParse(status.toString()) ?? 0;
 
     if (s == 1) {

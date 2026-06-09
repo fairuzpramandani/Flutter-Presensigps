@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:presensigps/services/api_service.dart';
-import 'package:presensigps/utils/session_manager.dart'; // Import SessionManager
+import 'package:presensigps/utils/session_manager.dart';
 
 class HistoriPage extends StatefulWidget {
   const HistoriPage({super.key});
@@ -20,7 +20,7 @@ class _HistoriPageState extends State<HistoriPage> {
   List<dynamic> _historiList = [];
   bool _isLoading = false;
   bool _hasSearched = false;
-  String? _userPhotoUrl; // Variabel untuk menyimpan URL foto user
+  String? _userPhotoUrl;
 
   @override
   void initState() {
@@ -28,23 +28,17 @@ class _HistoriPageState extends State<HistoriPage> {
     DateTime now = DateTime.now();
     _selectedBulan = (now.month).toString();
     _selectedTahun = now.year.toString();
-    _loadUserProfile(); // Ambil data user saat halaman dibuka
+    _loadUserProfile();
   }
 
   // Ambil foto profil dari Session/API Profile
   Future<void> _loadUserProfile() async {
-    // Asumsi: Kita ambil email dari session, lalu panggil API profile
-    // Atau jika Anda menyimpan URL foto saat login, bisa ambil langsung dari SessionManager
     String? email = await SessionManager.getEmail();
     if (email != null) {
       final result = await ApiService.getProfile(email);
       if (result['status'] == true) {
         setState(() {
-          // Sesuaikan path ini dengan struktur folder public di Laravel Anda
-          // Jika di Laravel: asset('storage/uploads/karyawan/namafoto.jpg')
           String photoName = result['data']['foto'] ?? 'default.png';
-          // Ganti BASE_URL_LARAVEL dengan URL server Anda (misal http://10.0.2.2:8000)
-          // ApiService.baseUrl sudah menangani logic IP
           _userPhotoUrl = "${ApiService.baseUrl}/storage/uploads/karyawan/$photoName";
         });
       }
@@ -87,7 +81,7 @@ class _HistoriPageState extends State<HistoriPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushReplacementNamed(context, '/dashboard'),
         ),
         title: const Text("Histori Presensi", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF0A234E),
@@ -180,7 +174,6 @@ class _HistoriPageState extends State<HistoriPage> {
                     itemBuilder: (context, index) {
                       var h = _historiList[index];
                       
-                      // PERBAIKAN 1: Format Tanggal "06 November 2025"
                       String tgl = "";
                       try {
                         tgl = DateFormat("dd MMMM yyyy", "id_ID").format(DateTime.parse(h['tgl_presensi']));
@@ -197,7 +190,7 @@ class _HistoriPageState extends State<HistoriPage> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // PERBAIKAN 2: Foto Profil
+                              // Foto Profil
                               CircleAvatar(
                                 radius: 25,
                                 backgroundColor: Colors.grey[200],
@@ -217,7 +210,7 @@ class _HistoriPageState extends State<HistoriPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      tgl, // Tanggal format baru
+                                      tgl,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                     ),
                                     const SizedBox(height: 5),

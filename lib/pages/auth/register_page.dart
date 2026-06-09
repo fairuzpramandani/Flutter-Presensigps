@@ -28,7 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
   
   bool _isLoading = false;
   bool _isDataLoading = true;
-  bool _isConnectionError = false; // Penanda jika koneksi gagal
+  bool _isConnectionError = false;
 
   @override
   void initState() {
@@ -135,7 +135,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
             // --- DROPDOWN DEPARTEMEN (DINAMIS) ---
             _isConnectionError 
-                ? _buildRetryButton("Gagal memuat Departemen") // Tampil jika koneksi putus
+                ? _buildRetryButton("Gagal memuat Departemen")
                 : _buildDropdown(
                     hint: "Pilih Departemen",
                     icon: Icons.business,
@@ -147,7 +147,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
             // --- DROPDOWN JAM KERJA (DINAMIS) ---
             _isConnectionError 
-                ? _buildRetryButton("Gagal memuat Jam Kerja") // Tampil jika koneksi putus
+                ? _buildRetryButton("Gagal memuat Jam Kerja")
                 : _buildDropdown(
                     hint: "Pilih Jam Kerja",
                     icon: Icons.access_time,
@@ -185,7 +185,6 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // Tombol Retry jika koneksi gagal
   Widget _buildRetryButton(String text) {
     return Container(
       width: double.infinity,

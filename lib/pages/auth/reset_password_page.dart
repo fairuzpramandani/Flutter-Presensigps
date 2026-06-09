@@ -44,7 +44,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       _success = false;
     });
 
-    // Menyamakan data dengan yang diminta oleh route password.direct.update di Laravel
     final data = {
       'email': _emailController.text,
       'password': _passwordController.text,
@@ -62,7 +61,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         _success = true;
         _message = "Password berhasil diperbarui! Silahkan login.";
       });
-      // Beri delay sebentar lalu kembali ke login
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) Navigator.pop(context);
       });

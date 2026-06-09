@@ -33,8 +33,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     final res = await ApiService.directResetPassword({
       'email': _emailController.text,
-      // Untuk direct reset, Anda juga perlu password baru di form ini, tapi 
-      // karena Blade hanya meminta email, kita asumsikan ini adalah 'Forgot Password' sederhana.
     }); 
 
     if (!mounted) return;
@@ -48,8 +46,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _success = true;
         _message = res['message'] ?? "Silakan cek email Anda untuk instruksi reset password.";
       });
-      // Navigasi ke halaman Reset Password (opsional, tergantung alur Anda)
-      // Navigator.push(context, MaterialPageRoute(builder: (_) => const ResetPasswordPage())); 
 
     } else {
       setState(() {
@@ -135,7 +131,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 const SizedBox(height: 20),
                 
-                // Link Kembali
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: const Center(

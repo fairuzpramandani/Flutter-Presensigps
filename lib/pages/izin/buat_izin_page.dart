@@ -16,7 +16,7 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
   final TextEditingController _ketController = TextEditingController();
   String? _selectedStatus; 
   bool _isSubmitting = false;
-  File? _buktiFoto; // Variabel untuk menyimpan foto bukti sakit
+  File? _buktiFoto;
 
   Future<void> _selectDate(BuildContext context) async {
     DateTime? picked = await showDatePicker(
@@ -32,7 +32,6 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
     }
   }
 
-  // FUNGSI: Ambil Foto dari Galeri/Kamera
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
@@ -58,7 +57,6 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
       return;
     }
     
-    // Validasi Wajib Foto jika Status = Sakit (s)
     if (_selectedStatus == 's' && _buktiFoto == null) {
       _showSnackbar("Wajib melampirkan foto Surat Dokter/Bukti Sakit!", Colors.red);
       return;
@@ -66,7 +64,6 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
 
     setState(() => _isSubmitting = true);
 
-    // Kirim menggunakan ApiService khusus Multipart
     final result = await ApiService.storeIzinWithFile(
       _tglController.text,
       _selectedStatus!,
@@ -140,7 +137,7 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
                     const SizedBox(height: 20),
 
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedStatus, // Perbaikan linter (initialValue bukan value)
+                      initialValue: _selectedStatus,
                       decoration: const InputDecoration(
                         labelText: "Status",
                         prefixIcon: Icon(Icons.info_outline),
@@ -153,7 +150,6 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
                       onChanged: (val) {
                         setState(() {
                           _selectedStatus = val;
-                          // Reset foto jika user ganti pikiran jadi Izin
                           if (val == 'i') _buktiFoto = null; 
                         });
                       },
@@ -173,7 +169,6 @@ class _BuatIzinPageState extends State<BuatIzinPage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // TAMPILKAN TOMBOL UPLOAD JIKA STATUS == 's'
                     if (_selectedStatus == 's') ...[
                       const Text("Bukti Sakit (Surat Dokter)", style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
