@@ -275,7 +275,6 @@ class _FaceEnrollmentPageState extends State<FaceEnrollmentPage> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        // FIX: Mengubah .withOpacity(0.3) menjadi .withValues(alpha: 0.3)
                         color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 10, 
                         spreadRadius: 2,

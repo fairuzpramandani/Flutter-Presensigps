@@ -449,6 +449,7 @@ class ApiService {
         request.fields['ket'] = data['ket'];
         request.fields['lokasi'] = data['lokasi'];
         request.fields['waktu_asli'] = data['timestamp'];
+        request.fields['is_rooted'] = data['is_rooted'] ?? "0";
 
         File foto = File(data['image_path']);
         if (await foto.exists()) {

@@ -28,6 +28,7 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
   bool _isSubmitting = false;
   bool _isInsideRadius = false;
   bool _isFakeGps = false;
+  bool _isRooted = false;
 
   List<CircleMarker> _officeCircles = [];
   List<dynamic> _rawOfficeData = [];
@@ -202,6 +203,10 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
 
         bool isRooted = await Rjsniffer.amICompromised() ?? false;
         
+        setState(() {
+          _isRooted = isRooted;
+        });
+        
         if (isRooted) {
           if (!isOffline) {
             await ApiService.laporKecurangan(email ?? 'Unknown', 'Jailbreak', 'Perangkat Root terdeteksi.');
@@ -273,6 +278,7 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
           'image_path': compressedFile.path, 
           'ket': widget.ket,
           'timestamp': DateTime.now().toIso8601String(),
+          'is_rooted': _isRooted ? "1" : "0",
         });
 
         if (mounted) {
@@ -307,6 +313,9 @@ class _PresensiCreatePageState extends State<PresensiCreatePage> {
         
         request.fields['ket'] = widget.ket;
         request.fields['lokasi'] = "${_currentPosition!.latitude},${_currentPosition!.longitude}";
+
+        request.fields['is_rooted'] = _isRooted ? "1" : "0"; 
+        
         request.files.add(await http.MultipartFile.fromPath('image', compressedFile.path));
 
         var response = await request.send().timeout(const Duration(seconds: 10));
